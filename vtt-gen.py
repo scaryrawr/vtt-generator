@@ -22,6 +22,9 @@ with open('config.yml', 'r') as config_file:
     config = yaml.load(config_file, Loader=yaml.SafeLoader)
 
 outfile = open(args.output, 'w')
+
+# Add file header
+outfile.write('WEBVTT\n\n')
 done = False
 
 def format_timestamp(ticks):
