@@ -23,7 +23,8 @@ ffmpeg.input(args.input).output(audio_file).overwrite_output().run()
 with contextlib.closing(wave.open(audio_file, 'r')) as wave_file:
     duration = wave_file.getnframes() / wave_file.getframerate()
 
-with open('config.yml', 'r') as config_file:
+configPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'config.yml')
+with open(configPath, 'r') as config_file:
     config = yaml.load(config_file, Loader=yaml.SafeLoader)
 
 outfile = open(args.output, 'w')
