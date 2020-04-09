@@ -10,5 +10,5 @@ Generates VTT files for a video using FFMPEG and Azure Cognitive Services.
 
 # Run
 
-`./vvt-gen.py --input path/to/video --output path/to/subtiles.vtt`
+`./vtt-gen.py --input path/to/video --output path/to/subtiles.vtt`
 
