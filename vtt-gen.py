@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/python3
 
 import argparse
 import azure.cognitiveservices.speech as azurespeech
@@ -7,6 +7,8 @@ import time
 import yaml
 import json
 import os
+import wave
+import contextlib
 
 parser = argparse.ArgumentParser(description='Generate VTT for video file')
 parser.add_argument('--input', type=str, help='input video file')
@@ -17,6 +19,9 @@ args = parser.parse_args()
 # Convert to PCM format
 audio_file = args.output + '.wav'
 ffmpeg.input(args.input).output(audio_file).overwrite_output().run()
+
+with contextlib.closing(wave.open(audio_file, 'r')) as wave_file:
+    duration = wave_file.getnframes() / wave_file.getframerate()
 
 with open('config.yml', 'r') as config_file:
     config = yaml.load(config_file, Loader=yaml.SafeLoader)
@@ -36,25 +41,43 @@ def format_timestamp(ticks):
     return '{:02d}:{:02d}:{:06.3f}'.format(hours, minutes, seconds)
 
 def stop_cb(evt):
-    print('Closing: {}'.format(evt))
     global speech_recognizer
     speech_recognizer.stop_continuous_recognition()
-    global done
-    done = True
+
     global outfile
     outfile.close()
+    print()
+
+    global done
+    done = True
 
 sequence = 0
 def recognized_cb(evt):
-    global outfile
+    # Need to load results from json to be able to get offset and duration
     result = json.loads(evt.result.json)
+
+    # Offset is start time
     start = format_timestamp(result['Offset'])
-    end = format_timestamp(result['Offset'] + result['Duration'])
-    timeline = '{} --> {}'.format(start, end)
+
+    # Add the duration to get the end time
+    end_pos = result['Offset'] + result['Duration']
+    end = format_timestamp(end_pos)
+    
     global sequence
+    global outfile
+    
+    # Format is:
+    # Sequence#
+    # Start --> End
+    # Captions
+    # [blank line]
     sequence += 1
+    timeline = '{} --> {}'.format(start, end)
     outfile.write('{}\n{}\n{}\n\n'.format(sequence, timeline, result['DisplayText']))
-    print('{}\n{}\n{}\n\n'.format(sequence, timeline, result['DisplayText']))
+
+    global duration
+    print('\rProgress: {:.2f}%'.format(end_pos / 100000.0 / duration), end='')
+    
 
 speech_config = azurespeech.SpeechConfig(subscription=config['key'], region=config['region'])
 audio_config = azurespeech.audio.AudioConfig(filename=audio_file)
