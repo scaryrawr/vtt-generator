@@ -82,13 +82,19 @@ def recognized_cb(evt):
     # Assuming words and dispaly words length are the same...
     words = result['NBest'][best_index]['Words']
     display_words = result['DisplayText'].split(' ')
-    
+
+    end_time = result['Duration'] + result['Offset']
+
+    # Min of half a second or the set max chunk length
+    min_chunk_trail = min(max_chunk_length, 10000000.0 / 2)
     last_end = 0
     for i in range(len(words)):
         word = words[i]
         chunk['end'] = word['Offset'] + word['Duration']
         chunk['text'] = f"{chunk['text']} {display_words[i]}"
-        if (chunk['end'] - chunk['start'] > max_chunk_length):
+        # If there's tiny bits of text at the end, just include it in the previous line
+        if ((chunk['end'] - chunk['start'] > max_chunk_length) and
+            (end_time - chunk['end'] >= min_chunk_trail)):
             write_chunk(chunk)
             chunk['start'] = chunk['end']
             chunk['text'] = ''
