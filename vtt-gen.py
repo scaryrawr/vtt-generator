@@ -15,7 +15,7 @@ import yaml
 parser = argparse.ArgumentParser(description='Generate VTT for video file')
 parser.add_argument('--input', type=str, help='input video file')
 parser.add_argument('--output', type=str, help='output file')
-parser.add_argument('-maxlinetime', type=float, help='max line time in seconds', default=2.5)
+parser.add_argument('--maxlinetime', type=float, help='max line time in seconds', default=2.5)
 
 args = parser.parse_args()
 
